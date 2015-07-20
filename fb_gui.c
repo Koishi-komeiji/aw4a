@@ -11,6 +11,8 @@
 
 #include "font_ubuntumono_9x18.h"
 
+#include "imgtst1.h"
+
 struct fb_var_screeninfo vinfo;
 struct fb_fix_screeninfo finfo;
 
@@ -23,7 +25,13 @@ void write_pixel(char *fbptr, int x, int y, int r, int g, int b, int a){
     *(fbptr + thislocation + 3) = a;
 }
 
-void render_char(char *fbp,int x,int y,char **font,int charname){
+void render_char(char *fbp,int x,int y,char **font,int charname,unsigned short int effects){
+    /* Effects:
+     * 0 - None
+     * 1 - Red
+     * 2 - Green
+     * 3 - Blue
+     */
     unsigned short int which_color = 0;
     unsigned long int fontdata_pos = 0;
     unsigned long int wanted_pos = 0;
@@ -34,40 +42,56 @@ void render_char(char *fbp,int x,int y,char **font,int charname){
     x_cur = x;
     y_cur = y;
 
-    wanted_pos = (charname - 0x20) * 486;
-    for ( fontdata_pos = wanted_pos; fontdata_pos < (wanted_pos+486); fontdata_pos++) {
+    if ( ( ( x + *font[0] ) > vinfo.xres ) || ( ( y + *font[1] ) > vinfo.yres ) ) {
+        printf("Warning: Attempted to access beyond end of framebuffer device. Operation cancelled.\n");
+    } else {
+        wanted_pos = (charname - 0x20) * *font[0] * *font[1] * 3;
+        for ( fontdata_pos = wanted_pos; fontdata_pos < (wanted_pos+(*font[0] * *font[1] * 3)); fontdata_pos++) {
 
-        switch ( which_color ) {
-        case 0:
-            r = font[2][fontdata_pos];
-            which_color++;
-            break;
-        case 1:
-            g = font[2][fontdata_pos];
-            which_color++;
-            break;
-        case 2:
-            b = font[2][fontdata_pos];
-            which_color = 0;
-            if ( r == 0 && g == 0 && b == 0){
-            } else {
-            write_pixel(fbp,x_cur,y_cur,r,g,b,0);
-            }
-            if ( x_cur - x < 8 ){
-                x_cur++;
-            } else {
-                x_cur = x;
-                y_cur++;
+            switch ( which_color ) {
+            case 0:
+                r = font[2][fontdata_pos];
+                which_color++;
+                break;
+            case 1:
+                g = font[2][fontdata_pos];
+                which_color++;
+                break;
+            case 2:
+                b = font[2][fontdata_pos];
+                which_color = 0;
+                if ( r == 0 && g == 0 && b == 0){
+                } else {
+                    switch ( effects ) {
+                    case 0:
+                        write_pixel(fbp,x_cur,y_cur,r,g,b,0);
+                        break;
+                    case 1:
+                        write_pixel(fbp,x_cur,y_cur,r,0,0,0);
+                        break;
+                    case 2:
+                        write_pixel(fbp,x_cur,y_cur,0,g,0,0);
+                        break;
+                    case 3:
+                        write_pixel(fbp,x_cur,y_cur,0,0,b,0);
+                        break;
+                    }
+                }
+                if ( x_cur - x < (*font[0] - 1) ){
+                    x_cur++;
+                } else {
+                    x_cur = x;
+                    y_cur++;
+                }
+
+                break;
             }
 
-            break;
         }
-
     }
-
 }
 
-void render_string(char *fbp,int x,int y,char **font,char *string){
+void render_string(char *fbp,int x,int y,char **font,char *string,unsigned short int effects){
 
     unsigned long int counter = 0;
     unsigned long int offset = 0;
@@ -80,10 +104,58 @@ void render_string(char *fbp,int x,int y,char **font,char *string){
 
     for ( counter = 0; counter < strlen(string); counter++){
 
-        render_char(fbp,x_cur,y_cur,font,string[counter]);
+        render_char(fbp,x_cur,y_cur,font,string[counter],effects);
         x_cur = x_cur + *font[0];
     }
 
+}
+
+void render_image(char *fbp,int x,int y,char **image){
+
+    unsigned short int which_color = 0;
+    unsigned long int imgdata_pos = 0;
+    //unsigned long int wanted_pos = 0;
+    int r,g,b;
+    int x_cur;
+    int y_cur;
+
+    x_cur = x;
+    y_cur = y;
+
+    printf("Image: %d x %d\n",atoi(image[0]),atoi(image[1]));
+    if ( ( ( x + atoi(image[0]) ) > vinfo.xres ) || ( ( y + atoi(image[1]) ) > vinfo.yres ) ) {
+        printf("Warning: Attempted to access beyond end of framebuffer device. Operation cancelled.\n");
+    } else {
+        for ( imgdata_pos = 0; imgdata_pos < ( atoi(image[0]) * atoi(image[1]) * 3 ); imgdata_pos++) {
+
+            switch ( which_color ) {
+            case 0:
+                r = image[2][imgdata_pos];
+                which_color++;
+                break;
+            case 1:
+                g = image[2][imgdata_pos];
+                which_color++;
+                break;
+            case 2:
+                b = image[2][imgdata_pos];
+                which_color = 0;
+
+                write_pixel(fbp,x_cur,y_cur,r,g,b,0);
+
+
+                if ( x_cur - x < ( atoi(image[0]) - 1 ) ){
+                    x_cur++;
+                } else {
+                    x_cur = x;
+                    y_cur++;
+                }
+
+                break;
+            }
+
+        }
+    }
 }
 
 int main() {
@@ -149,15 +221,18 @@ int main() {
     //            }
     //        }
 
-    render_string(fbp,0,600,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq");
+    render_image(fbp,1000,100,img_testqwq_1024x768);
+    render_string(fbp,0,600,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",0);
+    render_string(fbp,0,618,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",1);
+    render_string(fbp,0,636,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",2);
+    render_string(fbp,0,654,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",3);
+    render_string(fbp,1850,700,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",0);
 
-
-
-//    render_font(fbp,209,200,font_ubuntumono_9x18,'a');
-//    render_font(fbp,218,200,font_ubuntumono_9x18,'i');
-//    render_font(fbp,227,200,font_ubuntumono_9x18,'v');
-//    render_font(fbp,236,200,font_ubuntumono_9x18,'e');
-//    render_font(fbp,245,200,font_ubuntumono_9x18,'!');
+    //    render_font(fbp,209,200,font_ubuntumono_9x18,'a');
+    //    render_font(fbp,218,200,font_ubuntumono_9x18,'i');
+    //    render_font(fbp,227,200,font_ubuntumono_9x18,'v');
+    //    render_font(fbp,236,200,font_ubuntumono_9x18,'e');
+    //    render_font(fbp,245,200,font_ubuntumono_9x18,'!');
 
     munmap(fbp, screensize);
     close(fbfd);
