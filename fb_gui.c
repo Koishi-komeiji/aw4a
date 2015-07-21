@@ -10,6 +10,8 @@
 #include <stdlib.h>
 
 #include "font_ubuntumono_9x18.h"
+#include "font_ubuntumono_18x36.h"
+#include "icons-48px.h"
 
 #include "imgtst1.h"
 
@@ -114,7 +116,6 @@ void render_image(char *fbp,int x,int y,char **image){
 
     unsigned short int which_color = 0;
     unsigned long int imgdata_pos = 0;
-    //unsigned long int wanted_pos = 0;
     int r,g,b;
     int x_cur;
     int y_cur;
@@ -157,6 +158,28 @@ void render_image(char *fbp,int x,int y,char **image){
         }
     }
 }
+
+void render_rectenagle(char *fbp,int x,int y,int w,int h,int s,int r,int g,int b){
+
+    // s: Line size in pixels
+    int x_cur;
+    int y_cur;
+
+    x_cur = x;
+    y_cur = y;
+
+    if ( ( ( x + w ) > vinfo.xres ) || ( ( y + h ) > vinfo.yres ) ) {
+        printf("Warning: Attempted to access beyond end of framebuffer device. Operation cancelled.\n");
+    } else {
+
+        // QAQ...
+
+
+    }
+
+}
+
+
 
 int main() {
     long int screensize = 0;
@@ -221,12 +244,13 @@ int main() {
     //            }
     //        }
 
-    render_image(fbp,1000,100,img_testqwq_1024x768);
-    render_string(fbp,0,600,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",0);
-    render_string(fbp,0,618,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",1);
-    render_string(fbp,0,636,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",2);
-    render_string(fbp,0,654,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",3);
-    render_string(fbp,1850,700,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",0);
+    render_image(fbp,0,0,img_testqwq_1024x768);
+    render_image(fbp,500,800,img_icon_lock_48x48);
+    //    render_string(fbp,0,600,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",0);
+    //    render_string(fbp,0,618,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",1);
+    //    render_string(fbp,0,636,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",2);
+    //    render_string(fbp,0,654,font_ubuntumono_9x18,"Naive!!!233333333333!!! La la la Demacia!!! OwO QwQ OAO qwq qaq",3);
+    render_string(fbp,0,800,font_ubuntumono_18x36,"Satori loves Koishi~",0);
 
     //    render_font(fbp,209,200,font_ubuntumono_9x18,'a');
     //    render_font(fbp,218,200,font_ubuntumono_9x18,'i');
